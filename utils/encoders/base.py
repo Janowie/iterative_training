@@ -1,5 +1,6 @@
 from multiprocessing import Pool
 import numpy as np
+import pandas as pd
 
 # Annotations
 import numpy.typing as npt
@@ -8,14 +9,17 @@ import numpy.typing as npt
 from .functions import encode_ohe_matrix_2d
 
 
-# TODO: proper documentation and typing hints!
 class BaseEncoder:
+
+    """
+    The base encoder class
+    """
 
     def __init__(self, func=encode_ohe_matrix_2d, tensor_dim=(50, 26, 1)):
         self.tensor_dim = tensor_dim
         self.func = func
 
-    def __call_func__(self, x):
+    def __call_func__(self, x: pd.Series):
         """
         Helper function to call the "encoding function" supplied with the "tensor_dim" param.
         :param x: df row
@@ -23,9 +27,9 @@ class BaseEncoder:
         """
         return self.func(x, tensor_dim=self.tensor_dim)
 
-    def encode(self, df) -> npt.NDArray[np.bool_]:
+    def encode(self, df: pd.DataFrame) -> npt.NDArray[np.bool_]:
         """
-        Applies func to given df.
+        Applies func to given df. Uses maximal number of processes available.
         :param df: pandas DataFrame to be encoded by func
         :return: ndarray (with encoded df)
         """
