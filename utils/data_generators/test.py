@@ -3,7 +3,9 @@ import random
 import numpy as np
 
 # Import tested class
-from utils.data_generators.base import BaseDataGenerator
+import pandas as pd
+
+from utils.data_generators.base import BaseDataGenerator, BaseDataCreator
 
 
 class TestDataGen(unittest.TestCase):
@@ -34,3 +36,43 @@ class TestDataGen(unittest.TestCase):
         num_negative = len(batch_y) - num_positive
 
         self.assertEqual(num_positive * self.ratio[1], num_negative * self.ratio[0])
+
+
+class TestDataCreation(unittest.TestCase):
+
+    def test_positive_dataset_creation(self):
+        path = "./positive.csv"
+
+        df_mirna = pd.read_csv("../data_generators/miR_Family_Info.csv").sample(n=5000, random_state=42)
+
+        bc = BaseDataCreator()
+
+        df = bc.make_dataset(mirna_df=df_mirna, store_dataset=path,
+                             mutation_mode="positive_class", test=True)
+        counts = df.groupby("mode").count()
+        print(counts)
+
+        with self.subTest():
+            self.assertAlmostEqual(counts.loc["noise"]["mirna"], 200, delta=10)
+
+        with self.subTest():
+            self.assertAlmostEqual(counts.loc["canonical_20"]["mirna"], 300, delta=10)
+
+    def test_negative_dataset_creation(self):
+        path = "./negative.csv"
+
+        df_mirna = pd.read_csv("../data_generators/miR_Family_Info.csv").sample(n=5000, random_state=42)
+
+        bc = BaseDataCreator()
+
+        df = bc.make_dataset(mirna_df=df_mirna, store_dataset=path, n=10,
+                             mutation_mode="negative_class", test=True)
+
+        counts = df.groupby("mode").count()
+        print(counts)
+
+        with self.subTest():
+            self.assertAlmostEqual(counts.loc["noise"]["mirna"], 10000, delta=10)
+
+        with self.subTest():
+            self.assertAlmostEqual(counts.loc["canonical_20"]["mirna"], 15000, delta=10)

@@ -1,9 +1,17 @@
+import typing
+
 import tensorflow as tf
 import numpy as np
+import pandas as pd
 import math
+from random import randint, sample
 
 
 class BaseDataGenerator(tf.keras.utils.Sequence):
+    """
+    This class feeds training data to keras model. It does not generate new samples - this functionality
+    is provided by other classes.
+    """
 
     def __init__(self,
                  x_set_positive, y_set_positive,
@@ -53,3 +61,158 @@ class BaseDataGenerator(tf.keras.utils.Sequence):
         np.random.shuffle(batch_y)
 
         return batch_x, batch_y
+
+
+class BaseDataCreator:
+    """
+    This base class provides base methods for creating samples.
+    """
+
+    @staticmethod
+    def get_mutation_rate(mode):
+        """
+        Create array of probabilities of mutating each nucleotide in the miRNA sequence based on the mode.
+        :param mode:
+            - canonical_perfect - 2-7nt 0 mutation rate, others 0.8
+            - canonical_20 - 2-7nt 0.1 mutation rate, others 0.8
+            - non_canonical - from random position between 1, 6 following 4 nt have 0 mutation probability,
+            from random position between 16, 23 following 4 nt have 0 mutation probability, others 0.8
+            - noise - 1.0 mutation probability,
+        :return: array of probabilities of mutation
+        """
+        mutation_rate = [1.0 for _ in range(26)]
+
+        # 20% "Canonical Seed 0% (perfect)" (i.e. pos 2-7 = 0%, other = 100 % mut.rate)
+        if mode == "canonical_perfect":
+            for i in range(2, 8):
+                mutation_rate[i] = 0
+
+        # 30% "Canonical Seed 20% (mismatch)" (i.e. pos 2-7 = 20%, other = 100 % mut.rate)
+        elif mode == "canonical_20":
+            for i in range(2, 8):
+                mutation_rate[i] = 0.2
+
+        # 30% "Non-canonical Seed Complementary" (i.e. within pos 1-9 have 3-5 consecutive nt at 0%. AND within pos
+        # 12-20 another 3-5 consecutive at 20%. Rest 100% mut.rate)
+        elif mode == "non_canonical":
+            start = randint(0, 6)
+            end = randint(12, 15)
+
+            for i in range(start, start + 4):
+                mutation_rate[i] = 0
+            for i in range(end, end + randint(4, 6)):
+                mutation_rate[i] = 0.2
+
+        # 20% "Noise" (i.e. 100% mut. rate)
+        elif mode == "noise":
+            pass
+
+        return mutation_rate
+
+    @staticmethod
+    def create_target(mirna, mutation_rate, target_len=50):
+        """
+        Function to create target sequence based on miRNA sequence and mutation rate.
+        :param mirna: - miRNA sequence
+        :param mutation_rate: - array with probabilities of mutation of mirna sequence
+        :param target_len: int -> length of generated target mRNA
+        :return: mRNA target; reverse complement miRNA based on probabilities,
+        pad to the length of TARGET_LEN
+        """
+
+        alphabet = ["A", "C", "G", "T"]
+        complementarity = {
+            "A": "T",
+            "T": "A",
+            "C": "G",
+            "G": "C"
+        }
+
+        tmp_mrna = ""
+        for i in range(len(mirna)):
+            if randint(0, 100) / 100 <= mutation_rate[i]:
+                choice = set(alphabet).difference(set(mirna[i]))
+                tmp_mrna = tmp_mrna + sample(list(choice), 1)[0]
+            else:
+                tmp_mrna = tmp_mrna + mirna[i]
+
+        mrna = ""
+        for nt in tmp_mrna:
+            mrna = complementarity[nt] + mrna
+        random_sequence = ''.join(np.random.choice(alphabet, target_len - len(mirna), replace=True))
+        random_point = randint(0, target_len - len(mirna))
+        mrna = random_sequence[0:random_point] + mrna + random_sequence[random_point:(target_len - len(mirna))]
+
+        return mrna
+
+    def make_dataset(self,
+                     mirna_df=None,
+                     store_dataset="",
+                     n=1,
+                     target_len=50,
+                     mutation_mode=None,
+                     **kwargs):
+        """
+        Main function of the program. Go through input miRNA file and for each sequence based on given mode
+        create N artificial targets. Output miRNAs and mRNAs to two separate tsv files.
+
+        :param mirna_df: pandas.DataFrame with mirnas
+        :param store_dataset: str => path where created dataset should be stored (if None is passed, dataset will not
+        be stored).
+        :param n: int => number of samples created from each mirna
+        :param target_len: int => len of output mrna target sequence
+        :param mutation_mode: str => either specific mode or "positive_class"
+        :return: pandas.DataFrame
+        """
+
+        output = {
+            "mirna": [],
+            "mrna": []
+        }
+
+        if kwargs.get("test", False) is True:
+            output['mode'] = []
+
+        percent = lambda a, b: a / b * 100
+
+        for i, index_row in enumerate(mirna_df.iterrows()):
+
+            _, row = index_row
+
+            mode = "noise"
+
+            if mutation_mode == "negative_class":
+                mode = "noise"
+            elif mutation_mode == "positive_class":
+
+                p = percent(i, len(mirna_df))
+
+                if p < 20:
+                    mode = "canonical_perfect"
+                elif 20 <= p < 50:
+                    mode = "canonical_20"
+                elif 50 <= p < 80:
+                    mode = "non_canonical"
+                else:
+                    mode = "noise"
+
+            if len(row['Mature sequence']) <= 26:
+                for _ in range(n):
+                    mutation_rate = self.get_mutation_rate(mode)
+
+                    # Replace U => T
+                    mirna = row['Mature sequence'].replace('U', 'T')
+
+                    output['mirna'].append(mirna)
+                    output['mrna'].append(self.create_target(mirna, mutation_rate, target_len=target_len))
+
+                    if "mode" in output:
+                        output['mode'].append(mode)
+
+        # Create pd.DataFrame from data
+        df = pd.DataFrame(data=output)
+
+        if store_dataset is not None:
+            df.to_csv(path_or_buf=store_dataset, index=False)
+
+        return df

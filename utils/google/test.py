@@ -31,7 +31,7 @@ class GoogleDriveTester(unittest.TestCase):
             Rerum voluptatem pariatur est ipsa nulla.
             """)
 
-        gd = GoogleDrive(credentials="../credentials.json")
+        gd = GoogleDrive(credentials="../../data/credentials.json")
 
         file = "./test.txt"
 
@@ -48,7 +48,7 @@ class GoogleDriveTester(unittest.TestCase):
 class GoogleSheetsTester(unittest.TestCase):
 
     def test_logging(self):
-        gs = GoogleSheets(credentials="../credentials.json",
+        gs = GoogleSheets(credentials="../../data/credentials.json",
                           sheet_url="https://docs.google.com/spreadsheets/d/1f8zGb_ebp301HsfJhS2QB0HnYm_azFUCmzCua7Z1DQU/edit#gid=58332320")
 
         df = pd.DataFrame(data={
