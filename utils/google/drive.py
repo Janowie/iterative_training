@@ -41,6 +41,9 @@ class GoogleDrive(GoogleBase):
             file = self.service.files().create(body=file_metadata, media_body=media, fields='id, webViewLink').execute()
 
             # Return link to created file
-            return file['webViewLink']
+            return file
 
         return None
+
+    def delete_file(self, file_id):
+        self.service.files().delete(fileId=file_id).execute()

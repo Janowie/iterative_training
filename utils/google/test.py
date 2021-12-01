@@ -1,6 +1,10 @@
 import unittest
+import os
+
+import pandas as pd
 
 from .drive import GoogleDrive
+from .sheets import GoogleSheets
 
 
 class GoogleDriveTester(unittest.TestCase):
@@ -29,6 +33,35 @@ class GoogleDriveTester(unittest.TestCase):
 
         gd = GoogleDrive(credentials="../credentials.json")
 
-        link = gd.upload_file("test_drive.txt", "./test.txt",
-                                       "https://drive.google.com/drive/u/0/folders/1HioXiaThtx4iectL27xeSkthOTMCfKa9")
-        self.assertIsInstance(link, str)
+        file = "./test.txt"
+
+        drive_file = gd.upload_file("test_drive.txt", file,
+                                    "https://drive.google.com/drive/u/0/folders/1HioXiaThtx4iectL27xeSkthOTMCfKa9")
+
+        if os.path.exists(file):
+            os.remove(file)
+            gd.delete_file(drive_file['id'])
+
+        self.assertIsInstance(drive_file, dict)
+
+
+class GoogleSheetsTester(unittest.TestCase):
+
+    def test_logging(self):
+        gs = GoogleSheets(credentials="../credentials.json",
+                          sheet_url="https://docs.google.com/spreadsheets/d/1f8zGb_ebp301HsfJhS2QB0HnYm_azFUCmzCua7Z1DQU/edit#gid=58332320")
+
+        df = pd.DataFrame(data={
+            "Sales - Jan": [68,97,27,46,75,74],
+            "Sales - Feb": [74,76,49,44,68,52],
+            "Sales - Mar": [60,88,32,67,87,62],
+            "Total Sales": [202,261,108,157,230,188]
+        })
+        # , index=["1.12.","2.12.","3.12.","4.12.","5.12.","6.12."]
+
+        _ = gs.create_sheet("Test Worksheet", 50, 50)
+        result = gs.insert_chart(data=df, title="Company sales", chart_type="LINE",
+                                 legend_x_title="Date", legend_y_title="Sales")
+        print(result)
+
+        self.assertIsInstance(result, dict)
