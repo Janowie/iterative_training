@@ -43,14 +43,13 @@ class TestDataCreation(unittest.TestCase):
     def test_positive_dataset_creation(self):
         path = "./positive.csv"
 
-        df_mirna = pd.read_csv("../data_generators/miR_Family_Info.csv").sample(n=5000, random_state=42)
+        df_mirna = pd.read_csv("../data_generators/miR_Family_Info.csv").sample(n=1000, random_state=42)
 
         bc = BaseDataCreator()
 
         df = bc.make_dataset(mirna_df=df_mirna, store_dataset=path,
                              mutation_mode="positive_class", test=True)
         counts = df.groupby("mode").count()
-        print(counts)
 
         with self.subTest():
             self.assertAlmostEqual(counts.loc["noise"]["mirna"], 200, delta=10)
@@ -61,7 +60,7 @@ class TestDataCreation(unittest.TestCase):
     def test_negative_dataset_creation(self):
         path = "./negative.csv"
 
-        df_mirna = pd.read_csv("../data_generators/miR_Family_Info.csv").sample(n=5000, random_state=42)
+        df_mirna = pd.read_csv("../data_generators/miR_Family_Info.csv").sample(n=1000, random_state=42)
 
         bc = BaseDataCreator()
 
@@ -69,10 +68,9 @@ class TestDataCreation(unittest.TestCase):
                              mutation_mode="negative_class", test=True)
 
         counts = df.groupby("mode").count()
-        print(counts)
 
         with self.subTest():
-            self.assertAlmostEqual(counts.loc["noise"]["mirna"], 10000, delta=10)
+            self.assertAlmostEqual(counts.loc["noise"]["mirna"], 2000, delta=10)
 
         with self.subTest():
-            self.assertAlmostEqual(counts.loc["canonical_20"]["mirna"], 15000, delta=10)
+            self.assertAlmostEqual(counts.loc["canonical_20"]["mirna"], 3000, delta=10)
