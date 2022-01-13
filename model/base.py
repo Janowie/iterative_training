@@ -53,14 +53,7 @@ class IterativeModel(tensorflow.keras.Model):
         epochs = kwargs['epochs'] if kwargs.get('epochs') else 50
 
         # TODO: Preprocess and create the initial training dataset
-        x_positive, y_positive, x_negative, y_negative = sampler.get_data()
-
-        # Split into train, validation and test parts
-        train_dataset, val_dataset, test_dataset = self._split_train_val_test_(
-            x_positive, y_positive,
-            x_negative, y_negative,
-            (1, sampler.negative_ratio),
-            batch_size)
+        train_datagen, val_datagen, test_datagen = sampler.get_data(batch_size)
 
         # ------------------------------------------------------------------------ #
         # Init with checkpoints passed from user, add functional checkpoint
@@ -75,8 +68,8 @@ class IterativeModel(tensorflow.keras.Model):
         print("-" * 30)
 
         # Run the initial fit, save model
-        history = self.fit(x=train_dataset,
-                           validation_data=val_dataset,
+        history = self.fit(x=train_datagen,
+                           validation_data=val_datagen,
                            callbacks=callbacks,
                            **kwargs)
 
@@ -86,16 +79,16 @@ class IterativeModel(tensorflow.keras.Model):
             # add new training data to the current training ones.
 
             model = tensorflow.keras.models.load_model('best_model.h5')
-            train_dataset, val_dataset = sampler.on_training_end(model)
+            train_datagen, val_datagen = sampler.on_training_end(model)
 
             # Recompile model to start training from beginning
             if recompile is True:
                 self.compile(**self.compilation_kwargs)
 
-            new_history = self.fit(x=train_dataset,
-                               validation_data=val_dataset,
-                               callbacks=callbacks,
-                               **kwargs)
+            new_history = self.fit(x=train_datagen,
+                                   validation_data=val_datagen,
+                                   callbacks=callbacks,
+                                   **kwargs)
 
             history = self.__merge_history(history, new_history)
 
@@ -106,7 +99,7 @@ class IterativeModel(tensorflow.keras.Model):
         print("-" * 30)
 
         model = tensorflow.keras.models.load_model('best_model.h5')
-        results = model.evaluate(test_dataset, batch_size=batch_size, verbose=0)
+        results = model.evaluate(test_datagen, batch_size=batch_size, verbose=0)
 
         print("\nTest results:\n")
         print("binary accuracy \t\t loss")

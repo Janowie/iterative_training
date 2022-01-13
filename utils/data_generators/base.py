@@ -36,7 +36,8 @@ class BaseDataGenerator(tf.keras.utils.Sequence):
         """
         return math.ceil((len(self.y_positive) + len(self.y_negative)) / self.batch_size)
 
-    def __get_slice__(self, arr, idx, num):
+    @staticmethod
+    def __get_slice__(arr, idx, num):
         return arr[idx * num: (idx + 1) * num]
 
     def __getitem__(self, idx):
@@ -147,7 +148,7 @@ class BaseDataCreator:
 
     def make_dataset(self,
                      mirna_df=None,
-                     store_dataset="",
+                     store_dataset=None,
                      n=1,
                      target_len=50,
                      mutation_mode=None,
@@ -179,7 +180,7 @@ class BaseDataCreator:
 
             _, row = index_row
 
-            mode = "noise"
+            mode = None
 
             if mutation_mode == "negative_class":
                 mode = "noise"
