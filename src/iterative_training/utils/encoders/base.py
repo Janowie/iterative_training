@@ -2,9 +2,6 @@ from multiprocessing import Pool
 import numpy as np
 import pandas as pd
 
-# Annotations
-import numpy.typing as npt
-
 # Custom functions
 from .functions import encode_ohe_matrix_2d
 
@@ -27,7 +24,7 @@ class BaseEncoder:
         """
         return self.func(x, tensor_dim=self.tensor_dim)
 
-    def encode(self, df: pd.DataFrame) -> npt.NDArray[np.bool_]:
+    def encode(self, df: pd.DataFrame):
         """
         Applies func to given df. Uses maximal number of processes available.
         :param df: pandas DataFrame to be encoded by func
