@@ -6,7 +6,7 @@ import unittest
 # from utils.loggers.test import LoggerTester
 # from utils.google.test import GoogleSheetsTester, GoogleDriveTester
 
-from utils.data_generators.test import TestDataCreation
+from src.iterative_training.utils.data_generators.test import TestDataCreation
 
 # Run all tests using
 # 'python -m unittest discover -s test -t .\utils\tests\'

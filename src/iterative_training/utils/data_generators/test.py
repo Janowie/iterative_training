@@ -5,7 +5,7 @@ import numpy as np
 # Import tested class
 import pandas as pd
 
-from utils.data_generators.base import BaseDataGenerator, BaseDataCreator
+from src.iterative_training.utils.data_generators.base import BaseDataGenerator, BaseDataCreator
 
 
 class TestDataGen(unittest.TestCase):

@@ -1,7 +1,7 @@
 from sklearn.model_selection import train_test_split
 import numpy as np
 
-from utils.data_generators.base import BaseDataGenerator
+from src.iterative_training.utils.data_generators.base import BaseDataGenerator
 
 
 class BaseSampler:
