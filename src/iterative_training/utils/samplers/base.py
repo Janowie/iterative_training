@@ -65,7 +65,7 @@ class BaseSampler:
         :param iteration:
         :return:
         """
-        if isinstance(ratio, str):
+        if isinstance(ratio, int):
             return ratio
         else:
             return ratio(iteration)

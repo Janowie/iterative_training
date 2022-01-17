@@ -152,6 +152,7 @@ class BaseDataCreator:
                      n=1,
                      target_len=50,
                      mutation_mode=None,
+                     mirna_column_name='Mature sequence',
                      **kwargs):
         """
         Main function of the program. Go through input miRNA file and for each sequence based on given mode
@@ -163,6 +164,7 @@ class BaseDataCreator:
         :param n: int => number of samples created from each mirna
         :param target_len: int => len of output mrna target sequence
         :param mutation_mode: str => either specific mode or "positive_class"
+        :param mirna_column_name: str => column name to use from mirna_df
         :return: pandas.DataFrame
         """
 
@@ -197,12 +199,12 @@ class BaseDataCreator:
                 else:
                     mode = "noise"
 
-            if len(row['Mature sequence']) <= 26:
+            if len(row[mirna_column_name]) <= 26:
                 for _ in range(n):
                     mutation_rate = self.get_mutation_rate(mode)
 
                     # Replace U => T
-                    mirna = row['Mature sequence'].replace('U', 'T')
+                    mirna = row[mirna_column_name].replace('U', 'T')
 
                     output['mirna'].append(mirna)
                     output['mrna'].append(self.create_target(mirna, mutation_rate, target_len=target_len))
