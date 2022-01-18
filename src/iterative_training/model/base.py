@@ -8,6 +8,10 @@ class IterativeModel(tensorflow.keras.Model):
         self.compilation_kwargs = {}
 
     @staticmethod
+    def __name__():
+        return "IterativeModel"
+
+    @staticmethod
     def __merge_history(history, new_history):
         """
         Merges two history dictionaries. This is a private method!
@@ -30,6 +34,11 @@ class IterativeModel(tensorflow.keras.Model):
             self.compilation_kwargs = kwargs
 
         super(IterativeModel, self).compile(**kwargs)
+
+    def load(self, filepath):
+        return tensorflow.keras.models.load_model(
+            filepath, custom_objects={self.__name__(): self}
+        )
 
     def fit_iterative(self,
                       sampler=None,
@@ -98,7 +107,7 @@ class IterativeModel(tensorflow.keras.Model):
         print(" Evaluation")
         print("-" * 30)
 
-        model = tensorflow.keras.models.load_model('best_model.h5')
+        model = self.load('best_model.h5')
         results = model.evaluate(test_datagen, batch_size=batch_size, verbose=0)
 
         print("\nTest results:\n")

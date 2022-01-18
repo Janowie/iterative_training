@@ -40,7 +40,7 @@ class BaseSampler:
 
         :param negative_ratio:  either a fixed ratio or scheduler (function that gets iteration as input
             and returns ratio)
-        :param positive_dataset: dataset with non encoded mRNA and miRNA pairs
+        :param positive_dataset: dataset with non encoded miRNA
         :param data_creator:  generator that takes in positive samples and returns negative ones
         :param encoder:     object able to encode miRNA / mRNA into "one-hot encoding"
         """
