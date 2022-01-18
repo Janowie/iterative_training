@@ -61,7 +61,6 @@ class IterativeModel(tensorflow.keras.Model):
         batch_size = kwargs['batch_size'] if kwargs.get('batch_size') else 256
         epochs = kwargs['epochs'] if kwargs.get('epochs') else 50
 
-        # TODO: Preprocess and create the initial training dataset
         train_datagen, val_datagen, test_datagen = sampler.get_data(batch_size)
 
         # ------------------------------------------------------------------------ #
@@ -80,6 +79,7 @@ class IterativeModel(tensorflow.keras.Model):
         history = self.fit(x=train_datagen,
                            validation_data=val_datagen,
                            callbacks=callbacks,
+                           epochs=epochs,
                            **kwargs)
 
         for iteration in range(num_iterations):
@@ -97,6 +97,7 @@ class IterativeModel(tensorflow.keras.Model):
             new_history = self.fit(x=train_datagen,
                                    validation_data=val_datagen,
                                    callbacks=callbacks,
+                                   epochs=epochs,
                                    **kwargs)
 
             history = self.__merge_history(history, new_history)
