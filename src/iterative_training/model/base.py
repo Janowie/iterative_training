@@ -67,7 +67,6 @@ class IterativeModel(tensorflow.keras.Model):
         # Init with checkpoints passed from user, add functional checkpoint
         callbacks = [callback for callback in kwargs.get("callbacks") or []]
         callbacks.insert(0, tensorflow.keras.callbacks.ModelCheckpoint("best_model.h5", save_best_only=True, verbose=0))
-        callbacks.insert(0, tensorflow.keras.callbacks.EarlyStopping(patience=int(epochs / 2.5), verbose=1))
 
         print("\n")
 
