@@ -56,6 +56,9 @@ class BaseSampler:
         self.current_negative_ratio = None
         self.positive_dataset = positive_dataset
 
+        # Generate data, Encode datasets, ...
+        self.initialize()
+
     @staticmethod
     def _get_ratio_(ratio, iteration):
         """
@@ -70,7 +73,11 @@ class BaseSampler:
         else:
             return ratio(iteration)
 
-    def on_training_begin(self):
+    def initialize(self):
+        """
+        Split data and prepare the first data encoding.
+        :return:
+        """
 
         self.current_negative_ratio = self._get_ratio_(self.negative_ratio, 0)
 
@@ -100,6 +107,8 @@ class BaseSampler:
             self.val_n = self.encoder.encode(self.val_n_ne)
             self.test_p = self.encoder.encode(self.test_p_ne)
             self.test_n = self.encoder.encode(self.test_n_ne)
+
+            print("✅ sampler initialized")
 
     def on_training_end(self, model):
         """
