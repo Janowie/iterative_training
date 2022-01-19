@@ -31,7 +31,7 @@ class GoogleDriveLogger:
             description="",
             model=None,
             save_model=True,
-            sampler=sampler,
+            sampler=None,
             evaluation_dict=None,
             history=None,
             gd_folder_url=None,
