@@ -102,7 +102,10 @@ class GoogleDriveLogger:
 
         if history is not None:
             # Insert history
-            self.gs.insert_chart(data=pd.DataFrame(data=history),
+            df_history = pd.DataFrame(data=history)
+            df_history.reset_index(inplace=True)
+            df_history.rename(columns={"index": "epochs"}, inplace=True)
+            self.gs.insert_chart(data=df_history,
                                  title="History",
                                  chart_type="LINE",
                                  legend_x_title="Epoch",
