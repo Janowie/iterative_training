@@ -18,7 +18,7 @@ class GoogleSheets(GoogleBase):
         # Current worksheet (tab)
         self.worksheet_title = None
         self.worksheet_id = None
-        self.endRowIndex = 1    # Helper variable to keep track of where to start writing values
+        self.endRowIndex = 1  # Helper variable to keep track of where to start writing values
 
     @staticmethod
     def __get_spreadsheet_id__(sheet_url):
@@ -77,6 +77,16 @@ class GoogleSheets(GoogleBase):
         self.worksheet_title = title
         self.worksheet_id = resp['replies'][0]['addSheet']['properties']['sheetId']
 
+    def remove_sheet(self, sheet_id):
+        resp = self.service.spreadsheets().batchUpdate(spreadsheetId=self.spreadsheet_id, body={"requests": [
+            {
+                "deleteSheet": {
+                    "sheetId": sheet_id
+                }
+            }
+        ]
+        }).execute()
+
     def insert_data(self, data: typing.Union[list, numpy.ndarray], row: int = 0, column: str = "B") -> dict:
         """
         Inserts rows into a sheet
@@ -91,7 +101,7 @@ class GoogleSheets(GoogleBase):
         column = column.upper()
 
         coords = {
-            "startRowIndex": row - 1,   # indexes start at 0 not 1 !
+            "startRowIndex": row - 1,  # indexes start at 0 not 1 !
             "endRowIndex": row + len(data) - 1,
             "startColumnIndex": ord(column) - 65,
             "endColumnIndex": ord(column) + len(data[0]) - 65
@@ -111,6 +121,12 @@ class GoogleSheets(GoogleBase):
 
         return coords
 
+    @staticmethod
+    def column_to_index(col):
+        if isinstance(col, str):
+            return ord(col) - 65
+        return col
+
     def insert_chart(self,
                      data: pd.DataFrame = None,
                      title: str = "Chart",
@@ -124,30 +140,34 @@ class GoogleSheets(GoogleBase):
         :param data: pandas DataFrame with data to plot
         :param title: title of chart
         :param chart_type: one of: (BAR, LINE, AREA, COLUMN, SCATTER, COMBO, STEPPED_AREA)
-        :param kwargs: legend_x_title, legend_y_title, legend_position, ...
+        :param kwargs: data_offset, legend_x_title, legend_y_title, legend_position, ...
+            data_offset can specify the offset used when inserting chart data
         :return: result dict
         """
+
+        # TODO: add option to add data to a different sheet (better visual)
 
         # 1.)   Check if data is an instance of pandas DataFrame, if not, convert it
         if not isinstance(data, pd.DataFrame):
             data = pd.DataFrame(data=data)
 
         # 2.)   Insert data into current sheet
-        #   - convert index into first column
-        data.reset_index(inplace=True)
         data_to_insert = data.values.tolist()
+
+        data_offset = kwargs.get("data_offset", self.endRowIndex)
+
         data_to_insert.insert(0, list(data.columns))
 
-        coords = self.insert_data(data_to_insert, row=self.endRowIndex)
+        coords = self.insert_data(data_to_insert, row=data_offset, column=kwargs.get("data_column_letter", "B"))
 
         # 3.)   Prepare chart request body
 
         domain_source = {
-          "sheetId": self.worksheet_id,
-          "startRowIndex": coords['startRowIndex'],
-          "endRowIndex": coords['endRowIndex'],
-          "startColumnIndex": coords['startColumnIndex'],
-          "endColumnIndex": coords['startColumnIndex'] + 1
+            "sheetId": self.worksheet_id,
+            "startRowIndex": coords['startRowIndex'],
+            "endRowIndex": coords['endRowIndex'],
+            "startColumnIndex": coords['startColumnIndex'],
+            "endColumnIndex": coords['startColumnIndex'] + 1
         }
 
         series = list()
@@ -171,49 +191,49 @@ class GoogleSheets(GoogleBase):
             })
 
         body = {
-          "addChart": {
-            "chart": {
-              "spec": {
-                "title": title,
-                "basicChart": {
-                  "chartType": chart_type,
-                  "legendPosition": kwargs.get("legend_position", "BOTTOM_LEGEND"),
-                  "axis": [
-                    {
-                      "position": "BOTTOM_AXIS",
-                      "title": kwargs.get("legend_x_title", "x")
-                    },
-                    {
-                      "position": "LEFT_AXIS",
-                      "title": kwargs.get("legend_y_title", "y")
-                    }
-                  ],
-                  "domains": [
-                    {
-                      "domain": {
-                        "sourceRange": {
-                          "sources": [
-                            domain_source
-                          ]
+            "addChart": {
+                "chart": {
+                    "spec": {
+                        "title": title,
+                        "basicChart": {
+                            "chartType": chart_type,
+                            "legendPosition": kwargs.get("legend_position", "BOTTOM_LEGEND"),
+                            "axis": [
+                                {
+                                    "position": "BOTTOM_AXIS",
+                                    "title": kwargs.get("legend_x_title", "x")
+                                },
+                                {
+                                    "position": "LEFT_AXIS",
+                                    "title": kwargs.get("legend_y_title", "y")
+                                }
+                            ],
+                            "domains": [
+                                {
+                                    "domain": {
+                                        "sourceRange": {
+                                            "sources": [
+                                                domain_source
+                                            ]
+                                        }
+                                    }
+                                }
+                            ],
+                            "series": series,
+                            "headerCount": 1
                         }
-                      }
-                    }
-                  ],
-                  "series": series,
-                  "headerCount": 1
-                }
-              },
-              "position": {
-                "overlayPosition": {
-                    "anchorCell": {
-                        "sheetId": self.worksheet_id,
-                        "rowIndex": self.endRowIndex - len(data_to_insert),
-                        "columnIndex": len(data_to_insert[0]) + 2
                     },
-                },
-              }
+                    "position": {
+                        "overlayPosition": {
+                            "anchorCell": {
+                                "sheetId": kwargs.get("worksheet_id", self.worksheet_id),
+                                "rowIndex": kwargs.get("row_index", self.endRowIndex - len(data_to_insert)),
+                                "columnIndex": self.column_to_index(kwargs.get("column", len(data_to_insert[0]) + 2)),
+                            },
+                        },
+                    }
+                }
             }
-          }
         }
 
         result = self.service.spreadsheets().batchUpdate(

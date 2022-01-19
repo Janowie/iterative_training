@@ -58,14 +58,15 @@ class IterativeModel(tensorflow.keras.Model):
         :return:
         """
 
-        batch_size = kwargs['batch_size'] if kwargs.get('batch_size') else 256
-        epochs = kwargs['epochs'] if kwargs.get('epochs') else 50
+        kwargs['batch_size'] = kwargs.get('batch_size', 256)
+        kwargs['epochs'] = kwargs.get('epochs', 50)
 
-        train_datagen, val_datagen, test_datagen = sampler.get_data(batch_size)
+        train_datagen, val_datagen, test_datagen = sampler.get_data(kwargs['batch_size'])
 
         # ------------------------------------------------------------------------ #
         # Init with checkpoints passed from user, add functional checkpoint
         callbacks = [callback for callback in kwargs.get("callbacks") or []]
+        # TODO: give possibility to rename model
         callbacks.insert(0, tensorflow.keras.callbacks.ModelCheckpoint("best_model.h5", save_best_only=True, verbose=0))
 
         print("\n")
@@ -78,7 +79,6 @@ class IterativeModel(tensorflow.keras.Model):
         history = self.fit(x=train_datagen,
                            validation_data=val_datagen,
                            callbacks=callbacks,
-                           epochs=epochs,
                            **kwargs)
 
         for iteration in range(num_iterations):
@@ -96,7 +96,6 @@ class IterativeModel(tensorflow.keras.Model):
             new_history = self.fit(x=train_datagen,
                                    validation_data=val_datagen,
                                    callbacks=callbacks,
-                                   epochs=epochs,
                                    **kwargs)
 
             history = self.__merge_history(history, new_history)
@@ -108,10 +107,10 @@ class IterativeModel(tensorflow.keras.Model):
         print("-" * 30)
 
         model = self.load('best_model.h5')
-        results = model.evaluate(test_datagen, batch_size=batch_size, verbose=0)
+        results = model.evaluate(test_datagen, batch_size=kwargs['batch_size'], verbose=0)
 
         print("\nTest results:\n")
         print("binary accuracy \t\t loss")
         print(f"{results[1]} \t\t {results[0]}")
 
-        return history
+        return history.history, model
