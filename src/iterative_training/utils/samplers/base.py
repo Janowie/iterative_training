@@ -5,7 +5,6 @@ from ..data_generators.base import BaseDataGenerator
 
 
 class BaseSampler:
-
     """
     The purpose of a sampler is to prepare training, validation and test data for model.
     """
@@ -85,25 +84,31 @@ class BaseSampler:
         # Initial initialization
 
         if self.train_p_ne is None:
-
             positive_data = self.creator.make_dataset(mirna_df=self.positive_dataset,
                                                       mutation_mode="positive_class")
             negative_data = self.creator.make_dataset(mirna_df=self.positive_dataset,
                                                       n=self.current_negative_ratio,
                                                       mutation_mode="negative_class")
 
-            self.train_p_ne, self.test_p_ne, self.train_n_ne, self.test_n_ne = train_test_split(positive_data,
-                                                                                                negative_data,
-                                                                                                test_size=0.2,
-                                                                                                random_state=42)
-            self.train_p_ne, self.val_p_ne, self.train_n_ne, self.val_n_ne = train_test_split(self.train_p_ne,
-                                                                                              self.train_n_ne,
-                                                                                              test_size=0.1,
-                                                                                              random_state=42)
+            self.train_p_ne, self.test_p_ne = train_test_split(positive_data,
+                                                               test_size=0.2,
+                                                               random_state=42)
+
+            self.train_n_ne, self.test_n_ne = train_test_split(negative_data,
+                                                               test_size=0.2,
+                                                               random_state=42)
+
+            self.train_p_ne, self.val_p_ne = train_test_split(self.train_p_ne,
+                                                              test_size=0.1,
+                                                              random_state=42)
+
+            self.train_n_ne, self.val_n_ne = train_test_split(self.train_n_ne,
+                                                              test_size=0.1,
+                                                              random_state=42)
             # Encode data
             self.train_p = self.encoder.encode(self.train_p_ne)
             self.train_n = self.encoder.encode(self.train_n_ne)
-            self.val_p = self.encoder.encode(self.train_p_ne)
+            self.val_p = self.encoder.encode(self.val_p_ne)
             self.val_n = self.encoder.encode(self.val_n_ne)
             self.test_p = self.encoder.encode(self.test_p_ne)
             self.test_n = self.encoder.encode(self.test_n_ne)
@@ -120,7 +125,7 @@ class BaseSampler:
 
         pass
 
-    def get_data(self, batch_size):
+    def get_data(self, batch_size=256):
         # Return data generators => train, valid, test
         # TODO: zmenit na dynamicke menenie ratia (ak je definovane)
         class_ratio = (1, self.current_negative_ratio)

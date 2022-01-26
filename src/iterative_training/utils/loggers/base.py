@@ -1,12 +1,8 @@
 from datetime import datetime
 import contextlib
 import io
-import gspread
 import pandas as pd
 import numpy as np
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
-from oauth2client.service_account import ServiceAccountCredentials
 from sklearn import metrics
 
 
@@ -32,13 +28,30 @@ class GoogleDriveLogger:
             model=None,
             save_model=True,
             sampler=None,
-            evaluation_dict=None,
+            evaluation_functions=[],
             history=None,
             gd_folder_url=None,
             saved_model_path=None,
             experiment_link=None,
             chart_anchor_column="J",
             iterative_training_conf=None):
+
+        """
+
+        :param title:
+        :param description:
+        :param model:
+        :param save_model:
+        :param sampler:
+        :param evaluation_functions: array of callables taking arguments y_pred, y_true. Each will be added.
+        :param history:
+        :param gd_folder_url:
+        :param saved_model_path:
+        :param experiment_link:
+        :param chart_anchor_column:
+        :param iterative_training_conf:
+        :return:
+        """
 
         # Add new sheet for current experiment
         # TODO: Check if given sheet already exists => causes "APIError"
@@ -75,6 +88,23 @@ class GoogleDriveLogger:
             data.append(["Ntb. link: ", experiment_link])
             data.append([""])
 
+        if sampler is not None:
+
+            predictions_proba = model.predict(np.concatenate((sampler.test_n, sampler.test_p)))
+            labels = np.concatenate((np.zeros(len(sampler.test_n)), np.ones(len(sampler.test_p))))
+
+            # Evaluate - precision, recall
+            predictions = np.zeros(len(predictions_proba))
+            predictions[np.reshape(predictions_proba, (len(predictions_proba))) >= 0.5] = 1
+
+            if len(evaluation_functions):
+                data.append(["Evaluation"])
+
+                for fun in evaluation_functions:
+                    data.append([fun.__name__, fun(predictions, labels)])
+
+            data.append([""])
+
         # Save model to drive and include link
         if save_model is True:
             url = self.gd.upload_file(f"model_{title}_{datetime.now().strftime('%Y%m%d_%H:%M:%S')}",
@@ -100,26 +130,12 @@ class GoogleDriveLogger:
         self.gs.worksheet_title = self.data_sheet['title']
         self.gs.endRowIndex = 1
 
-        if history is not None:
-            # Insert history
-            df_history = pd.DataFrame(data=history)
-            df_history.reset_index(inplace=True)
-            df_history.rename(columns={"index": "epochs"}, inplace=True)
-            self.gs.insert_chart(data=df_history,
-                                 title="History",
-                                 chart_type="LINE",
-                                 legend_x_title="Epoch",
-                                 legend_y_title="Value",
-                                 worksheet_id=self.display_sheet['id'],
-                                 row_index=2,
-                                 column=chart_anchor_column
-                                 )
-
         if sampler is not None:
+
             # Insert ROC AUC
-            predictions_proba = model.predict(np.concatenate((sampler.test_n, sampler.test_p)))
             fpr, tpr, _ = metrics.roc_curve(
-                np.concatenate((np.zeros(len(sampler.test_n)), np.ones(len(sampler.test_p)))), predictions_proba)
+                labels, predictions_proba
+            )
 
             auc = metrics.roc_auc_score(np.concatenate((np.zeros(len(sampler.test_n)), np.ones(len(sampler.test_p)))),
                                         predictions_proba)
@@ -134,5 +150,20 @@ class GoogleDriveLogger:
                                  legend_y_title="True Positive Rate",
                                  worksheet_id=self.display_sheet['id'],
                                  row_index=5,
+                                 column=chart_anchor_column
+                                 )
+
+        if history is not None:
+            # Insert history
+            df_history = pd.DataFrame(data=history)
+            df_history.reset_index(inplace=True)
+            df_history.rename(columns={"index": "epochs"}, inplace=True)
+            self.gs.insert_chart(data=df_history,
+                                 title="History",
+                                 chart_type="LINE",
+                                 legend_x_title="Epoch",
+                                 legend_y_title="Value",
+                                 worksheet_id=self.display_sheet['id'],
+                                 row_index=2,
                                  column=chart_anchor_column
                                  )

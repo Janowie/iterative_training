@@ -65,9 +65,10 @@ class IterativeModel(tensorflow.keras.Model):
 
         # ------------------------------------------------------------------------ #
         # Init with checkpoints passed from user, add functional checkpoint
-        callbacks = [callback for callback in kwargs.get("callbacks") or []]
+        kwargs['callbacks'] = [callback for callback in kwargs.get("callbacks", [])]
         # TODO: give possibility to rename model
-        callbacks.insert(0, tensorflow.keras.callbacks.ModelCheckpoint("best_model.h5", save_best_only=True, verbose=0))
+        # TODO: check if this callback is not already applied
+        kwargs['callbacks'].insert(0, tensorflow.keras.callbacks.ModelCheckpoint("best_model.h5", save_best_only=True, verbose=0))
 
         print("\n")
 
@@ -78,7 +79,6 @@ class IterativeModel(tensorflow.keras.Model):
         # Run the initial fit, save model
         history = self.fit(x=train_datagen,
                            validation_data=val_datagen,
-                           callbacks=callbacks,
                            **kwargs)
 
         for iteration in range(num_iterations):
@@ -95,7 +95,6 @@ class IterativeModel(tensorflow.keras.Model):
 
             new_history = self.fit(x=train_datagen,
                                    validation_data=val_datagen,
-                                   callbacks=callbacks,
                                    **kwargs)
 
             history = self.__merge_history(history, new_history)
