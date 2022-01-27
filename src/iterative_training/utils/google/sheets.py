@@ -53,23 +53,28 @@ class GoogleSheets(GoogleBase):
 
         return None
 
-    def create_sheet(self, title, rows, cols):
+    def create_sheet(self, title, rows, cols, tab_color=False):
+
+        sheet_props = {
+            "properties": {
+                "title": title,
+                "gridProperties": {
+                    "rowCount": rows,
+                    "columnCount": cols
+                }
+            }
+        }
+
+        if tab_color is True:
+            sheet_props['properties']["tabColor"] = {
+              "red": 0.7,
+              "green": 0.0,
+              "blue": 0.0
+            }
+
         resp = self.service.spreadsheets().batchUpdate(spreadsheetId=self.spreadsheet_id, body={"requests": [
             {
-                "addSheet": {
-                    "properties": {
-                        "title": title,
-                        "gridProperties": {
-                            "rowCount": rows,
-                            "columnCount": cols
-                        },
-                        # "tabColor": {
-                        #   "red": 1.0,
-                        #   "green": 0.3,
-                        #   "blue": 0.4
-                        # }
-                    }
-                }
+                "addSheet": sheet_props
             }
         ]
         }).execute()
@@ -87,7 +92,7 @@ class GoogleSheets(GoogleBase):
         ]
         }).execute()
 
-    def insert_data(self, data: typing.Union[list, numpy.ndarray], row: int = 0, column: str = "B") -> dict:
+    def insert_data(self, data, row, column="B") -> dict:
         """
         Inserts rows into a sheet
 

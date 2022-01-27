@@ -86,8 +86,8 @@ class IterativeModel(tensorflow.keras.Model):
             # Evaluate current model performance and based on its sampling strategy,
             # add new training data to the current training ones.
 
-            model = tensorflow.keras.models.load_model('best_model.h5')
-            train_datagen, val_datagen = sampler.on_training_end(model)
+            model = self.load('best_model.h5')
+            train_datagen, val_datagen = sampler.on_training_end(model, kwargs['batch_size'], iteration, test_datagen)
 
             # Recompile model to start training from beginning
             if recompile is True:

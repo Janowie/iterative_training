@@ -101,7 +101,7 @@ class GoogleDriveLogger:
                 data.append(["Evaluation"])
 
                 for fun in evaluation_functions:
-                    data.append([fun.__name__, fun(predictions, labels)])
+                    data.append([str(fun.__name__), str(fun(predictions, labels))])
 
             data.append([""])
 
