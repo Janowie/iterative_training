@@ -91,6 +91,7 @@ class IterativeModel(tensorflow.keras.Model):
 
             # Recompile model to start training from beginning
             if recompile is True:
+                print("🔁 Recompiling model")
                 self.compile(**self.compilation_kwargs)
 
             new_history = self.fit(x=train_datagen,
@@ -112,4 +113,4 @@ class IterativeModel(tensorflow.keras.Model):
         print("binary accuracy \t\t loss")
         print(f"{results[1]} \t\t {results[0]}")
 
-        return history.history, model
+        return history, model
