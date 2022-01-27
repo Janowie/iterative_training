@@ -79,7 +79,7 @@ class IterativeModel(tensorflow.keras.Model):
         # Run the initial fit, save model
         history = self.fit(x=train_datagen,
                            validation_data=val_datagen,
-                           **kwargs)
+                           **kwargs)['history']
 
         for iteration in range(num_iterations):
             # ---------------------------------------------------------------------- #
@@ -95,7 +95,7 @@ class IterativeModel(tensorflow.keras.Model):
 
             new_history = self.fit(x=train_datagen,
                                    validation_data=val_datagen,
-                                   **kwargs)
+                                   **kwargs)['history']
 
             history = self.__merge_history(history, new_history)
 
