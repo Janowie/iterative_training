@@ -58,6 +58,10 @@ class IterativeModel(tensorflow.keras.Model):
         :return:
         """
 
+        if recompile is True:
+            # Save initial weights for later use
+            self.save_weights("initial_weights")
+
         kwargs['batch_size'] = kwargs.get('batch_size', 256)
         kwargs['epochs'] = kwargs.get('epochs', 50)
 
@@ -91,7 +95,8 @@ class IterativeModel(tensorflow.keras.Model):
 
             # Recompile model to start training from beginning
             if recompile is True:
-                print("🔁 Recompiling model")
+                print("🔁 Resetting model")
+                self.load_weights("initial_weights")
                 self.compile(**self.compilation_kwargs)
 
             new_history = self.fit(x=train_datagen,
