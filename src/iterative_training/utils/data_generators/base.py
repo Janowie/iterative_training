@@ -152,6 +152,7 @@ class BaseDataCreator:
                      n=1,
                      target_len=50,
                      mutation_mode=None,
+                     include_mutation_mode=False,
                      mirna_column_name='Mature sequence',
                      **kwargs):
         """
@@ -164,6 +165,7 @@ class BaseDataCreator:
         :param n: int => number of samples created from each mirna
         :param target_len: int => len of output mrna target sequence
         :param mutation_mode: str => either specific mode or "positive_class"
+        :param include_mutation_mode: mutation applied to each sequence returned with it
         :param mirna_column_name: str => column name to use from mirna_df
         :return: pandas.DataFrame
         """
@@ -173,8 +175,8 @@ class BaseDataCreator:
             "mrna": []
         }
 
-        if kwargs.get("test", False) is True:
-            output['mode'] = []
+        if include_mutation_mode is True:
+            output['mutation'] = []
 
         percent = lambda a, b: a / b * 100
 
@@ -209,8 +211,8 @@ class BaseDataCreator:
                     output['mirna'].append(mirna)
                     output['mrna'].append(self.create_target(mirna, mutation_rate, target_len=target_len))
 
-                    if "mode" in output:
-                        output['mode'].append(mode)
+                    if include_mutation_mode is True:
+                        output['mutation'].append(mode)
 
         # Create pd.DataFrame from data
         df = pd.DataFrame(data=output)
