@@ -95,7 +95,7 @@ class IterativeModel(tensorflow.keras.Model):
 
             # Recompile model to start training from beginning
             if recompile is True:
-                print("🔁 Resetting model")
+                print("🔁 Resetting model\n")
                 self.load_weights("initial_weights")
                 self.compile(**self.compilation_kwargs)
 

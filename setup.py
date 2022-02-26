@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="iterative-training-pkg-janowie",
-    version="0.0.19",
+    version="0.0.20",
     author="Krcmar Jan",
     author_email="krcmar.jan@gmail.com",
     description="Package providing utilities for experiments on iterative training.",

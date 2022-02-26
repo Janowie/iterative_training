@@ -81,7 +81,7 @@ class BaseDataCreator:
             - noise - 1.0 mutation probability,
         :return: array of probabilities of mutation
         """
-        mutation_rate = [1.0 for _ in range(26)]
+        mutation_rate = np.ones(22)
 
         # 20% "Canonical Seed 0% (perfect)" (i.e. pos 2-7 = 0%, other = 100 % mut.rate)
         if mode == "canonical_perfect":
@@ -144,7 +144,7 @@ class BaseDataCreator:
         random_point = randint(0, target_len - len(mirna))
         mrna = random_sequence[0:random_point] + mrna + random_sequence[random_point:(target_len - len(mirna))]
 
-        return mrna
+        return mrna, random_point
 
     def make_dataset(self,
                      mirna_df=None,
@@ -153,6 +153,7 @@ class BaseDataCreator:
                      target_len=50,
                      mutation_mode=None,
                      include_mutation_mode=False,
+                     include_seed_start=False,
                      mirna_column_name='Mature sequence',
                      **kwargs):
         """
@@ -166,6 +167,7 @@ class BaseDataCreator:
         :param target_len: int => len of output mrna target sequence
         :param mutation_mode: str => either specific mode or "positive_class"
         :param include_mutation_mode: mutation applied to each sequence returned with it
+        :param include_seed_start: seed start (starting position) returned with it
         :param mirna_column_name: str => column name to use from mirna_df
         :return: pandas.DataFrame
         """
@@ -177,6 +179,8 @@ class BaseDataCreator:
 
         if include_mutation_mode is True:
             output['mutation'] = []
+        if include_seed_start is True:
+            output['seed_start'] = []
 
         percent = lambda a, b: a / b * 100
 
@@ -201,7 +205,7 @@ class BaseDataCreator:
                 else:
                     mode = "noise"
 
-            if len(row[mirna_column_name]) <= 26:
+            if len(row[mirna_column_name]) <= 22:
                 for _ in range(n):
                     mutation_rate = self.get_mutation_rate(mode)
 
@@ -209,10 +213,13 @@ class BaseDataCreator:
                     mirna = row[mirna_column_name].replace('U', 'T')
 
                     output['mirna'].append(mirna)
-                    output['mrna'].append(self.create_target(mirna, mutation_rate, target_len=target_len))
+                    target, seed_start = self.create_target(mirna, mutation_rate, target_len=target_len)
+                    output['mrna'].append(target)
 
                     if include_mutation_mode is True:
                         output['mutation'].append(mode)
+                    if include_seed_start is True:
+                        output['seed_start'].append(seed_start)
 
         # Create pd.DataFrame from data
         df = pd.DataFrame(data=output)

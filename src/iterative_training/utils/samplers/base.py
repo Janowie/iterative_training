@@ -43,6 +43,9 @@ class BaseSampler:
         :param data_creator:  generator that takes in positive samples and returns negative ones
         :param encoder:     object able to encode miRNA / mRNA into "one-hot encoding"
         """
+
+        # TODO Pass kwargs to data_creator!
+
         print("-" * 30)
         print(f" {self.__name__()}")
         print("-" * 30)
@@ -108,10 +111,18 @@ class BaseSampler:
             # Encode data
             self.train_p = self.encoder.encode(self.train_p_ne)
             self.train_n = self.encoder.encode(self.train_n_ne)
+
+            # print(f"✅ 1/3 \t training dataset encoded \t shape positive: {self.train_p.shape} \t shape negative: {self.train_n.shape}")
+            
             self.val_p = self.encoder.encode(self.val_p_ne)
             self.val_n = self.encoder.encode(self.val_n_ne)
+
+            # print(f"✅ 2/3 \t validation dataset encoded \t shape positive: {self.val_p.shape} \t shape negative: {self.val_n.shape}")
+
             self.test_p = self.encoder.encode(self.test_p_ne)
             self.test_n = self.encoder.encode(self.test_n_ne)
+
+            # print(f"✅ 3/3 \t validation dataset encoded \t shape positive: {self.val_p.shape} \t shape negative: {self.val_n.shape}")
 
             print("✅ sampler initialized")
 
